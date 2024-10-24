@@ -4,6 +4,7 @@ import com.example.server.domain.vo.response.RestBean;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 /**
@@ -25,6 +26,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public RestBean<String> onHttpRequestMethodNotSupportedException(Exception e) {
         return RestBean.failure(405, e.getMessage());
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public RestBean<String> onMaxUploadSizeExceededException(Exception e) {
+        return RestBean.failure(400, e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)

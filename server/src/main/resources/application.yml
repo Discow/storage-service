@@ -8,5 +8,10 @@ spring:
     password: ${DB_PASSWORD}
     url: ${DB_URL}
 
+  servlet:
+    multipart:
+      max-file-size: 4GB
+      max-request-size: 10GB
+
   storage:
     default-path: D:\\StorageService
