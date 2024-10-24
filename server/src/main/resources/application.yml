@@ -7,3 +7,6 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     url: ${DB_URL}
+
+  storage:
+    default-path: D:\\StorageService
