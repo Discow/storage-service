@@ -7,6 +7,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
+
 /**
  * 文件api：用于上传与下载文件
  */
@@ -28,5 +30,13 @@ public class FileApi {
     @GetMapping("/download/{fileId}")
     public RestBean<?> download(@PathVariable Long fileId) {
         return RestBean.success();
+    }
+
+    //秒传验证
+    @GetMapping("/is-exist")
+    public RestBean<?> isFileExist(String fileHash) {
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("isFileExist", fileService.isFileExist(fileHash));
+        return RestBean.success(map);
     }
 }

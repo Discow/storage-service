@@ -12,4 +12,7 @@ public interface FileService {
 
     //下载文件
     void download(Long fileId);
+
+    //验证文件是否存在
+    boolean isFileExist(String fileHash);
 }
