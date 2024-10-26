@@ -1,9 +1,13 @@
 package com.example.server.controller;
 
+import com.example.server.domain.dto.FileDTO;
 import com.example.server.domain.vo.response.RestBean;
 import com.example.server.service.FileService;
 import jakarta.annotation.Resource;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -28,8 +32,12 @@ public class FileApi {
 
     //下载文件
     @GetMapping("/download/{fileId}")
-    public RestBean<?> download(@PathVariable Long fileId) {
-        return RestBean.success();
+    public ResponseEntity<ByteArrayResource> download(@PathVariable Long fileId) {
+        FileDTO fileDTO = fileService.download(fileId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+        headers.setContentDispositionFormData("attachment", fileDTO.getFileName());
+        return ResponseEntity.ok().headers(headers).body(new ByteArrayResource(fileDTO.getFileBytes()));
     }
 
     //秒传验证

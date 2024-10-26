@@ -19,4 +19,8 @@ public interface FileMetadataMapper {
 
     @Select("select count(*) > 0 from file_metadata where file_name=#{fileName}")
     boolean existByName(@Param("fileName") String fileName);
+
+    //根据文件id获取文件metadata
+    @Select("select * from file_metadata where fid=#{fid}")
+    FileMetadata findById(@Param("fid") Long fid);
 }

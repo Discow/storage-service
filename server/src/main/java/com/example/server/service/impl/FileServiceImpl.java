@@ -1,13 +1,14 @@
 package com.example.server.service.impl;
 
+import com.example.server.domain.dto.FileDTO;
 import com.example.server.domain.entity.FileMetadata;
 import com.example.server.exception.GeneralException;
 import com.example.server.mapper.FileMetadataMapper;
 import com.example.server.mapper.SettingsMapper;
 import com.example.server.service.FileService;
 import com.example.server.util.HashUtils;
-import jakarta.annotation.Resource;
 import lombok.SneakyThrows;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -23,10 +25,14 @@ import static com.example.server.util.Constants.User;
 
 @Service
 public class FileServiceImpl implements FileService {
-    @Resource
-    FileMetadataMapper fileMetadataMapper;
-    @Resource
-    SettingsMapper settingsMapper;
+    private final FileMetadataMapper fileMetadataMapper;
+    private final String basePath;
+
+    @Autowired
+    public FileServiceImpl(FileMetadataMapper fileMetadataMapper, SettingsMapper settingsMapper) {
+        this.fileMetadataMapper = fileMetadataMapper;
+        this.basePath = settingsMapper.getValue(Settings.STORAGE_PATH_KEY);
+    }
 
     @SneakyThrows
     @Override
@@ -57,9 +63,21 @@ public class FileServiceImpl implements FileService {
         }
     }
 
+    @SneakyThrows
     @Override
-    public void download(Long fileId) {
-
+    public FileDTO download(Long fileId) {
+        FileMetadata fileMetadata = fileMetadataMapper.findById(fileId);
+        if (fileMetadata == null) {
+            throw new GeneralException("文件不存在");
+        }
+        String fileName = fileMetadata.getFileName(); //文件名
+        String fileSuffix = fileName.substring(fileName.lastIndexOf(".")); //后缀
+        String fileHash = fileMetadata.getFileHash(); //文件hash
+        Path path = Paths.get(basePath + "/" + fileHash + fileSuffix); //文件在文件系统的路径
+        return FileDTO.builder()
+                .fileName(fileName)
+                .fileBytes(Files.readAllBytes(path))
+                .build();
     }
 
     @Override
@@ -69,7 +87,7 @@ public class FileServiceImpl implements FileService {
 
     //抽取方法-保存到文件系统（basePath/fileMD5.txt）
     void saveToFS(MultipartFile file, String fileMD5) throws IOException {
-        Path path = Path.of(settingsMapper.getValue(Settings.STORAGE_PATH_KEY)
+        Path path = Path.of(basePath
                 + "/"
                 + fileMD5
                 + Objects.requireNonNull(file.getOriginalFilename()).substring(file.getOriginalFilename().lastIndexOf(".")));
