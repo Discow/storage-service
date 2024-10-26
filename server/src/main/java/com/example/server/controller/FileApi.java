@@ -1,16 +1,22 @@
 package com.example.server.controller;
 
+import com.example.server.config.CustomResourceHttpRequestHandler;
 import com.example.server.domain.dto.FileDTO;
 import com.example.server.domain.vo.response.RestBean;
+import com.example.server.exception.GeneralException;
 import com.example.server.service.FileService;
-import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
 import java.util.HashMap;
 
 /**
@@ -20,8 +26,14 @@ import java.util.HashMap;
 @RestController
 @RequestMapping("/api/file")
 public class FileApi {
-    @Resource
-    FileService fileService;
+    private final FileService fileService;
+    private final CustomResourceHttpRequestHandler customResourceHttpRequestHandler;
+
+    @Autowired
+    public FileApi(FileService fileService, CustomResourceHttpRequestHandler customResourceHttpRequestHandler) {
+        this.fileService = fileService;
+        this.customResourceHttpRequestHandler = customResourceHttpRequestHandler;
+    }
 
     //上传文件
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -46,5 +58,25 @@ public class FileApi {
         HashMap<String, Object> map = new HashMap<>();
         map.put("isFileExist", fileService.isFileExist(fileHash));
         return RestBean.success(map);
+    }
+
+    //预览文件
+    @GetMapping("/preview/{fileId}")
+    public ResponseEntity<?> preview(@PathVariable Long fileId, HttpServletRequest request, HttpServletResponse response) {
+        try {
+            // 解析文件路径
+            Path filePath = fileService.getFileFSPath(fileId);
+            // 设置资源路径
+            customResourceHttpRequestHandler.setResource(filePath);
+            // 设置响应头，inline 会在浏览器中显示或播放文件
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filePath.getFileName() + "\"");
+            // 让 CustomResourceHttpRequestHandler 处理请求
+            customResourceHttpRequestHandler.handleRequest(request, response);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (GeneralException e) {
+            return ResponseEntity.ok().body(RestBean.failure(400, e.getMessage()));
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }

@@ -75,15 +75,9 @@ public class FileServiceImpl implements FileService {
     @Override
     public FileDTO download(Long fileId) {
         FileMetadata fileMetadata = fileMetadataMapper.findById(fileId);
-        if (fileMetadata == null) {
-            throw new GeneralException("文件不存在");
-        }
-        String fileName = fileMetadata.getFileName(); //文件名
-        String fileSuffix = fileName.substring(fileName.lastIndexOf(".")); //后缀
-        String fileHash = fileMetadata.getFileHash(); //文件hash
-        Path path = Paths.get(basePath + "/" + fileHash + fileSuffix); //文件在文件系统的路径
+        Path path = this.getFilePath(fileMetadata); //文件在文件系统的路径
         return FileDTO.builder()
-                .fileName(fileName)
+                .fileName(fileMetadata.getFileName())
                 .fileBytes(Files.readAllBytes(path))
                 .build();
     }
@@ -91,6 +85,23 @@ public class FileServiceImpl implements FileService {
     @Override
     public boolean isFileExist(String fileHash) {
         return fileMetadataMapper.existByHash(fileHash);
+    }
+
+    @Override
+    public Path getFileFSPath(Long fileId) {
+        FileMetadata fileMetadata = fileMetadataMapper.findById(fileId);
+        return this.getFilePath(fileMetadata);
+    }
+
+    //抽取方法-根据文件id获取其在文件系统的路径
+    private Path getFilePath(FileMetadata fileMetadata) {
+        if (fileMetadata == null) {
+            throw new GeneralException("文件不存在");
+        }
+        String fileName = fileMetadata.getFileName(); //文件名
+        String fileSuffix = fileName.substring(fileName.lastIndexOf(".")); //后缀
+        String fileHash = fileMetadata.getFileHash(); //文件hash
+        return Paths.get(basePath + "/" + fileHash + fileSuffix);
     }
 
     //抽取方法-保存到文件系统（basePath/fileMD5.txt）
