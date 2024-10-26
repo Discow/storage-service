@@ -51,7 +51,15 @@ public class FileServiceImpl implements FileService {
             throw new GeneralException("文件已存在");
         } else if (!isFileHashExist && isFileNameExist) {
             //如果hash值不同，文件名相同，则重命名文件，然后存入文件系统，再保存元数据
-            String renameFile = file.getOriginalFilename() + "(1)";
+            String originalFilename = Objects.requireNonNull(file.getOriginalFilename());
+            String renameFile;
+            int dotIndex = originalFilename.lastIndexOf(".");
+            //判断是否有扩展名
+            if (dotIndex == -1) {
+                renameFile = originalFilename + "(1)";
+            } else {
+                renameFile = new StringBuilder(originalFilename).insert(dotIndex, "(1)").toString();
+            }
             saveToFS(file, fileMD5);
             saveMetadata(file, fileMD5, renameFile);
         } else if (isFileHashExist) {
