@@ -17,8 +17,8 @@ public interface FileMetadataMapper {
     @Select("select count(*) > 0 from file_metadata where file_hash=#{fileHash}")
     boolean existByHash(@Param("fileHash") String fileHash);
 
-    @Select("select count(*) > 0 from file_metadata where file_name=#{fileName}")
-    boolean existByName(@Param("fileName") String fileName);
+    @Select("select count(*) > 0 from file_metadata where file_name=#{fileName} and uid=#{uid}")
+    boolean existByNameAndUid(@Param("fileName") String fileName, @Param("uid") Long uid);
 
     //根据文件id获取文件metadata
     @Select("select * from file_metadata where fid=#{fid}")

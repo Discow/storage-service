@@ -43,9 +43,12 @@ public class FileServiceImpl implements FileService {
         //获取文件MD5
         String fileMD5 = HashUtils.calculateFileMD5(file.getInputStream());
 
+        //获取用户ID
+        Long uid = User.PUBLIC_USER_ID;
+
         //秒传验证（去重）功能（需要前端配合校验 api: '/api/file/is-exist'）
         boolean isFileHashExist = fileMetadataMapper.existByHash(fileMD5);
-        boolean isFileNameExist = fileMetadataMapper.existByName(file.getOriginalFilename());
+        boolean isFileNameExist = fileMetadataMapper.existByNameAndUid(file.getOriginalFilename(), uid);
         //如果文件名和hash值相同则文件已存在，无需任何操作
         if (isFileHashExist && isFileNameExist) {
             throw new GeneralException("文件已存在");
