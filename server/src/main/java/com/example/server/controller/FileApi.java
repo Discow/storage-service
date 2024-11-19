@@ -7,6 +7,7 @@ import com.example.server.exception.GeneralException;
 import com.example.server.service.FileService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
@@ -27,12 +28,13 @@ import java.util.HashMap;
 @RequestMapping("/api/file")
 public class FileApi {
     private final FileService fileService;
-    private final CustomResourceHttpRequestHandler customResourceHttpRequestHandler;
+    // 使用ObjectFactory注入CustomResourceHttpRequestHandler（方法注入）
+    private final ObjectFactory<CustomResourceHttpRequestHandler> customResourceHttpRequestHandlerObjectFactory;
 
     @Autowired
-    public FileApi(FileService fileService, CustomResourceHttpRequestHandler customResourceHttpRequestHandler) {
+    public FileApi(FileService fileService, ObjectFactory<CustomResourceHttpRequestHandler> customResourceHttpRequestHandlerObjectFactory) {
         this.fileService = fileService;
-        this.customResourceHttpRequestHandler = customResourceHttpRequestHandler;
+        this.customResourceHttpRequestHandlerObjectFactory = customResourceHttpRequestHandlerObjectFactory;
     }
 
     //上传文件
@@ -66,10 +68,12 @@ public class FileApi {
         try {
             // 解析文件路径
             Path filePath = fileService.getFileFSPath(fileId);
-            // 设置资源路径
-            customResourceHttpRequestHandler.setResource(filePath);
             // 设置响应头，inline 会在浏览器中显示或播放文件
             response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filePath.getFileName() + "\"");
+            // 获取（注入）customResourceHttpRequestHandler
+            CustomResourceHttpRequestHandler customResourceHttpRequestHandler = customResourceHttpRequestHandlerObjectFactory.getObject();
+            // 设置资源路径
+            customResourceHttpRequestHandler.setResource(filePath);
             // 让 CustomResourceHttpRequestHandler 处理请求
             customResourceHttpRequestHandler.handleRequest(request, response);
             return new ResponseEntity<>(HttpStatus.OK);
